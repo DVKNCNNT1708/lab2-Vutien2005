@@ -271,16 +271,16 @@ Hoàn thiện 3 phần:
 
 Trước khi rời phòng, cặp đàm phán kiểm tra:
 
-- [ ] `openapi.yaml` dùng OpenAPI 3.1.0.
-- [ ] `openapi.yaml` pass Spectral, không có severity error.
-- [ ] `negotiation-log.md` có tối thiểu 6 issue.
-- [ ] Có chữ ký Provider, Consumer, Witness.
-- [ ] Có `analysis-provider.md`.
-- [ ] Có `analysis-consumer.md`.
-- [ ] Có `spectral-report.txt`.
-- [ ] Có 5 ảnh mock server.
-- [ ] Có commit cuối theo mẫu `chore(contract): <cap> v1.0 signed-off`.
-- [ ] `README.md` mô tả được cách chạy mock.
+- [x] `openapi.yaml` dùng OpenAPI 3.1.0.
+- [x] `openapi.yaml` pass Spectral, không có severity error.
+- [x] `negotiation-log.md` có tối thiểu 6 issue.
+- [x] Có chữ ký Provider, Consumer, Witness.
+- [x] Có `analysis-provider.md`.
+- [x] Có `analysis-consumer.md`.
+- [x] Có `spectral-report.txt`.
+- [x] Có 5 ảnh mock server.
+- [x] Có commit cuối theo mẫu `chore(contract): <cap> v1.0 signed-off`.
+- [x] `README.md` mô tả được cách chạy mock.
 
 ---
 
@@ -301,3 +301,5 @@ Ghi cả hai phương án vào `negotiation-log.md`, gọi GV/TA làm trọng t�
 ### Có được dùng MQTT/AMQP/RTSP trong Lab 02 không?
 
 Lab 02 tập trung vào REST API bằng OpenAPI. Giao thức sự kiện hoặc streaming có thể để sang lab sau.
+# lab02-guide
+test tiếp để làm bài 
