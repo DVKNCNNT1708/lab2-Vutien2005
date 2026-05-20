@@ -1,262 +1,172 @@
-openapi: 3.1.0
-
+openapi: 3.0.0
 info:
-  title: Smart Campus — Lab 02 Contract Template
+  title: Smart Campus Lab 02 Contract Template
   version: 1.0.0
-  description: |
-    Hợp đồng API mẫu cho Lab 02.
+  description: Hop dong API cho Smart Campus - Alert duoc sinh tu dong tu cac event
   contact:
     name: FIT4110 Teaching Team
-    email: fit4110@example.edu.vn hoặc fit4110@example.email.vn
-
+    email: fit4110@example.edu.vn
 servers:
   - url: http://localhost:4010
     description: Prism mock server
   - url: https://api.campus.local
     description: Class network placeholder
-
 tags:
   - name: health
-    description: Kiểm tra trạng thái service
+    description: Kiem tra trang thai service
   - name: alerts
-    description: Quản lý cảnh báo Smart Campus
+    description: Quan ly canh bao Smart Campus tu dong sinh tu event
   - name: notifications
-    description: Quản lý thông báo đa kênh
+    description: Quan ly thong bao da kenh
   - name: events
-    description: Quản lý sự kiện nghiệp vụ
-
+    description: Quan ly su kien nghiep vu
 security:
   - bearerAuth: []
-
 paths:
   /health:
     get:
       operationId: getHealth
-      summary: Kiểm tra trạng thái service
-      description: Endpoint kiểm tra service còn hoạt động.
+      summary: Kiem tra trang thai service
       tags:
         - health
       security: []
       responses:
         '200':
-          description: Service đang hoạt động
+          description: Service dang hoat dong
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
-              examples:
-                ok:
-                  value:
-                    status: ok
-                    service: lab02-contract-template
-                    time: '2026-05-10T08:00:00Z'
-
-  /api/notifications:
-    post:
-      operationId: createNotification
-      summary: Trigger notification
-      description: |
-        Core Business gửi yêu cầu Notification service tạo cảnh báo đa kênh.
-        Request phải chứa eventId, source, type, priority, channels và danh sách receivers.
+  /api/alerts:
+    get:
+      operationId: listAlerts
+      summary: Lay danh sach canh bao
+      description: Lay danh sach cac canh bao trong Smart Campus
       tags:
-        - notifications
+        - alerts
+      parameters:
+        - name: severity
+          in: query
+          required: false
+          description: Loc theo muc do nghiem trong
+          schema:
+            type: string
+            enum:
+              - INFO
+              - WARNING
+              - CRITICAL
+        - name: status
+          in: query
+          required: false
+          description: Loc theo trang thai
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - ACKNOWLEDGED
+              - RESOLVED
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Danh sach canh bao
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertPage'
+        '401':
+          description: Thieu hoac sai thong tin xac thuc
+        '500':
+          description: Loi khong mong muon phia server
+  /api/alerts/{alertId}:
+    get:
+      operationId: getAlertById
+      summary: Lay chi tiet canh bao
+      tags:
+        - alerts
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiet canh bao
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          description: Khong tim thay canh bao
+        '500':
+          description: Loi khong mong muon phia server
+  /api/alerts/{alertId}/acknowledge:
+    patch:
+      operationId: acknowledgeAlert
+      summary: Xac nhan da doc canh bao
+      tags:
+        - alerts
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Da xac nhan canh bao
+        '404':
+          description: Khong tim thay canh bao
+        '500':
+          description: Loi khong mong muon phia server
+  /api/alerts/{alertId}/resolve:
+    patch:
+      operationId: resolveAlert
+      summary: Danh dau canh bao da duoc giai quyet
+      tags:
+        - alerts
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationRequest'
-            examples:
-              fireAlert:
-                value:
-                  eventId: evt_001
-                  source: CORE_BUSINESS
-                  type: FIRE_ALERT
-                  priority: HIGH
-                  title: Fire alarm in building A
-                  message: Detected smoke in building A101
-                  channels:
-                    - email
-                    - telegram
-                    - sms
-                  receivers:
-                    - userId: admin01
-                      email: admin@campus.edu
-                      phone: '+84123456789'
-                      telegramChatId: '123456789'
-                    - userId: security01
-                      email: security@campus.edu
-                      phone: '+84987654321'
-                      telegramChatId: '987654321'
-                  metadata:
-                    location: Building A
-                  createdAt: '2026-05-18T10:00:00Z'
-      responses:
-        '201':
-          description: Notification queued successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationResponse'
-              examples:
-                created:
-                  value:
-                    notificationId: noti_001
-                    status: PENDING
-                    message: Notification queued successfully
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-    get:
-      operationId: listNotifications
-      summary: Get notifications
-      description: Lấy danh sách notification từ Notification service.
-      tags:
-        - notifications
-      parameters:
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Danh sách notifications
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationPage'
-              examples:
-                firstPage:
-                  value:
-                    items:
-                      - notificationId: noti_001
-                        eventId: evt_001
-                        source: CORE_BUSINESS
-                        type: FIRE_ALERT
-                        priority: HIGH
-                        title: Fire alarm in building A
-                        message: Detected smoke in building A101
-                        channels:
-                          - email
-                          - telegram
-                        receivers:
-                          - userId: admin01
-                            email: admin@campus.edu
-                            phone: '+84123456789'
-                            telegramChatId: '123456789'
-                        status: SUCCESS
-                        sentChannels:
-                          - email
-                          - telegram
-                        createdAt: '2026-05-18T10:00:00Z'
-                    nextCursor: null
-                    hasMore: false
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/notifications/history:
-    get:
-      operationId: getNotificationHistory
-      summary: Get notification history
-      description: Lấy lịch sử thông báo đã xử lý và trạng thái gửi.
-      tags:
-        - notifications
-      parameters:
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Lịch sử notification
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationPage'
-              examples:
-                historyPage:
-                  value:
-                    items:
-                      - notificationId: noti_001
-                        eventId: evt_001
-                        source: CORE_BUSINESS
-                        type: FIRE_ALERT
-                        priority: HIGH
-                        title: Fire alarm in building A
-                        message: Detected smoke in building A101
-                        channels:
-                          - email
-                          - telegram
-                        receivers:
-                          - userId: admin01
-                            email: admin@campus.edu
-                            phone: '+84123456789'
-                            telegramChatId: '123456789'
-                        status: SUCCESS
-                        sentChannels:
-                          - email
-                          - telegram
-                        createdAt: '2026-05-18T10:00:00Z'
-                    nextCursor: null
-                    hasMore: false
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/notifications/{notificationId}:
-    get:
-      operationId: getNotificationById
-      summary: Get notification detail
-      description: Lấy chi tiết notification theo ID.
-      tags:
-        - notifications
-      parameters:
-        - $ref: '#/components/parameters/NotificationId'
-      responses:
-        '200':
-          description: Chi tiết notification
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationDetail'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/notifications/{notificationId}/read:
-    patch:
-      operationId: markNotificationAsRead
-      summary: Mark notification as read
-      description: Đánh dấu notification đã đọc.
-      tags:
-        - notifications
-      parameters:
-        - $ref: '#/components/parameters/NotificationId'
+              type: object
+              properties:
+                resolutionNote:
+                  type: string
       responses:
         '204':
-          description: Notification marked as read
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: Da danh dau da giai quyet
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Khong tim thay canh bao
         '500':
-          $ref: '#/components/responses/InternalServerError'
-
+          description: Loi khong mong muon phia server
   /events:
     post:
       operationId: createCampusEvent
-      summary: Gửi sự kiện nghiệp vụ vào hệ thống
-      description: |
-        Endpoint minh họa polymorphism.
-        Event có thể là SensorEvent hoặc AccessEvent.
+      summary: Gui su kien nghiep vu vao he thong
+      description: He thong se tu dong sinh alert neu su kien bat thuong
       tags:
         - events
       requestBody:
@@ -265,93 +175,86 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CampusEvent'
-            examples:
-              sensorEvent:
-                value:
-                  eventType: SENSOR_READING
-                  eventId: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
-                  deviceId: SENSOR-001
-                  metric: temperature
-                  value: 38.5
-                  unit: celsius
-                  timestamp: '2026-05-10T08:00:00Z'
-              accessEvent:
-                value:
-                  eventType: ACCESS_CHECK
-                  eventId: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babd
-                  gateId: GATE-01
-                  cardId: RFID-2026-001
-                  decision: ALLOW
-                  timestamp: '2026-05-10T08:01:00Z'
       responses:
         '201':
-          description: Event đã được ghi nhận
+          description: Su kien da duoc ghi nhan
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventAccepted'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Du lieu sai dinh dang
         '401':
-          $ref: '#/components/responses/Unauthorized'
-        '409':
-          $ref: '#/components/responses/Conflict'
+          description: Thieu hoac sai thong tin xac thuc
         '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-
+          description: Payload dung dinh dang nhung khong hop le
+        '500':
+          description: Loi server
+  /api/notifications:
+    post:
+      operationId: createNotification
+      summary: Gui thong bao
+      description: Khi mot alert duoc tao, he thong se tu dong goi endpoint nay
+      tags:
+        - notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      responses:
+        '201':
+          description: Da gui thong bao
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+        '400':
+          description: Du lieu sai dinh dang
+        '401':
+          description: Thieu hoac sai thong tin xac thuc
+        '500':
+          description: Loi server
+    get:
+      operationId: listNotifications
+      summary: Xem lich su thong bao
+      tags:
+        - notifications
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Danh sach thong bao
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPage'
+        '401':
+          description: Thieu xac thuc
+        '500':
+          description: Loi server
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
-  parameters:
-    AlertId:
-      name: alertId
-      in: path
-      required: true
-      description: UUID của cảnh báo.
-      schema:
-        type: string
-        format: uuid
-
-    NotificationId:
-      name: notificationId
-      in: path
-      required: true
-      description: UUID của notification.
-      schema:
-        type: string
-        format: uuid
-
-    Cursor:
-      name: cursor
-      in: query
-      required: false
-      description: Cursor dùng để lấy trang tiếp theo.
-      schema:
-        type:
-          - string
-          - 'null'
-        minLength: 1
-        maxLength: 200
-
-    Limit:
-      name: limit
-      in: query
-      required: false
-      description: Số item tối đa mỗi trang.
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-
   schemas:
     HealthStatus:
       type: object
-      additionalProperties: false
       required:
         - status
         - service
@@ -359,193 +262,74 @@ components:
       properties:
         status:
           type: string
-          enum: [ok]
-          example: ok
+          enum:
+            - ok
         service:
           type: string
-          minLength: 2
-          maxLength: 80
-          example: lab02-contract-template
         time:
           type: string
           format: date-time
-          example: '2026-05-10T08:00:00Z'
-
-    NotificationRequest:
+    Alert:
       type: object
-      additionalProperties: false
       required:
-        - eventId
-        - source
-        - type
-        - priority
+        - alertId
         - title
-        - message
-        - channels
-        - receivers
-        - createdAt
-      properties:
-        eventId:
-          type: string
-          example: evt_001
-          description: Unique event identifier for deduplication and trace.
-        source:
-          type: string
-          example: CORE_BUSINESS
-          description: Source service name.
-        type:
-          type: string
-          description: Alert type.
-          example: FIRE_ALERT
-        priority:
-          $ref: '#/components/schemas/NotificationPriority'
-        title:
-          type: string
-          minLength: 1
-          maxLength: 200
-          example: Fire alarm in building A
-        message:
-          type: string
-          minLength: 1
-          maxLength: 1000
-          example: Detected smoke in building A101
-        channels:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/NotificationChannel'
-          example: [email, telegram, sms]
-        receivers:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/NotificationReceiver'
-        metadata:
-          type: object
-          additionalProperties: true
-          description: Optional metadata for routing and audit.
-          example:
-            location: Building A
-            alertCode: FIRE-01
-        createdAt:
-          type: string
-          format: date-time
-          example: '2026-05-18T10:00:00Z'
-
-    NotificationResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - notificationId
+        - severity
         - status
-        - message
+        - sourceEventId
+        - sourceType
+        - triggeredAt
       properties:
-        notificationId:
+        alertId:
           type: string
           format: uuid
-          example: noti_001
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum:
+            - INFO
+            - WARNING
+            - CRITICAL
         status:
           type: string
-          enum: [PENDING, SUCCESS, FAILED]
-          example: PENDING
-        message:
+          enum:
+            - ACTIVE
+            - ACKNOWLEDGED
+            - RESOLVED
+        sourceEventId:
           type: string
-          example: Notification queued successfully
-        sentChannels:
-          type: array
-          items:
-            $ref: '#/components/schemas/NotificationChannel'
-          description: Channels that were successfully sent.
-
-    NotificationDetail:
-      allOf:
-        - $ref: '#/components/schemas/NotificationRequest'
-        - type: object
-          additionalProperties: false
-          required:
-            - notificationId
-            - status
-            - updatedAt
-          properties:
-            notificationId:
-              type: string
-              format: uuid
-              example: noti_001
-            status:
-              type: string
-              enum: [PENDING, SUCCESS, FAILED]
-              example: SUCCESS
-            sentChannels:
-              type: array
-              items:
-                $ref: '#/components/schemas/NotificationChannel'
-              example: [email, telegram]
-            failedChannels:
-              type: array
-              items:
-                $ref: '#/components/schemas/NotificationChannel'
-              example: [sms]
-            attempts:
-              type: integer
-              minimum: 0
-              example: 2
-            updatedAt:
-              type: string
-              format: date-time
-              example: '2026-05-18T10:01:00Z'
-
-    NotificationPage:
+        sourceType:
+          type: string
+        location:
+          type: string
+        triggeredAt:
+          type: string
+          format: date-time
+        acknowledgedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+        resolutionNote:
+          type: string
+    AlertPage:
       type: object
-      additionalProperties: false
       required:
         - items
-        - nextCursor
         - hasMore
       properties:
         items:
           type: array
-          minItems: 0
           items:
-            $ref: '#/components/schemas/NotificationDetail'
+            $ref: '#/components/schemas/Alert'
         nextCursor:
-          type:
-            - string
-            - 'null'
-          example: null
+          type: string
         hasMore:
           type: boolean
-          example: false
-
-    NotificationReceiver:
-      type: object
-      additionalProperties: false
-      required:
-        - userId
-      properties:
-        userId:
-          type: string
-          example: admin01
-        email:
-          type: string
-          format: email
-          example: admin@campus.edu
-        phone:
-          type: string
-          example: '+84123456789'
-        telegramChatId:
-          type: string
-          example: '123456789'
-
-    NotificationPriority:
-      type: string
-      enum: [LOW, MEDIUM, HIGH, CRITICAL]
-      example: HIGH
-
-    NotificationChannel:
-      type: string
-      enum: [email, telegram, sms, dashboard]
-      example: email
-
     CampusEvent:
       oneOf:
         - $ref: '#/components/schemas/SensorEvent'
@@ -555,10 +339,8 @@ components:
         mapping:
           SENSOR_READING: '#/components/schemas/SensorEvent'
           ACCESS_CHECK: '#/components/schemas/AccessEvent'
-
     SensorEvent:
       type: object
-      additionalProperties: false
       required:
         - eventType
         - eventId
@@ -570,35 +352,29 @@ components:
       properties:
         eventType:
           type: string
-          const: SENSOR_READING
+          enum:
+            - SENSOR_READING
         eventId:
           type: string
           format: uuid
         deviceId:
           type: string
-          pattern: '^SENSOR-[0-9]{3}$'
-          example: SENSOR-001
         metric:
           type: string
-          enum: [temperature, humidity, smoke, motion]
-          example: temperature
+          enum:
+            - temperature
+            - humidity
+            - smoke
+            - motion
         value:
           type: number
-          minimum: -100
-          maximum: 1000
-          example: 38.5
         unit:
           type: string
-          minLength: 1
-          maxLength: 20
-          example: celsius
         timestamp:
           type: string
           format: date-time
-
     AccessEvent:
       type: object
-      additionalProperties: false
       required:
         - eventType
         - eventId
@@ -609,32 +385,25 @@ components:
       properties:
         eventType:
           type: string
-          const: ACCESS_CHECK
+          enum:
+            - ACCESS_CHECK
         eventId:
           type: string
           format: uuid
         gateId:
           type: string
-          pattern: '^GATE-[0-9]{2}$'
-          example: GATE-01
         cardId:
           type: string
-          pattern: '^RFID-[0-9]{4}-[0-9]{3}$'
-          example: RFID-2026-001
         decision:
           type: string
-          enum: [ALLOW, DENY]
-          example: ALLOW
+          enum:
+            - ALLOW
+            - DENY
         timestamp:
           type: string
           format: date-time
-
     EventAccepted:
       type: object
-      additionalProperties: false
-      required:
-        - eventId
-        - acceptedAt
       properties:
         eventId:
           type: string
@@ -642,136 +411,70 @@ components:
         acceptedAt:
           type: string
           format: date-time
-
-    Problem:
+        generatedAlertId:
+          type: string
+          format: uuid
+    NotificationRequest:
       type: object
-      additionalProperties: false
       required:
-        - type
-        - title
-        - status
+        - alertId
+        - channels
+        - receivers
       properties:
-        type:
+        alertId:
           type: string
-          format: uri
-          example: https://campus.local/errors/validation
-        title:
-          type: string
-          minLength: 3
-          maxLength: 120
-          example: Dữ liệu không hợp lệ
-        status:
-          type: integer
-          minimum: 400
-          maximum: 599
-          example: 400
-        detail:
-          type:
-            - string
-            - 'null'
-          maxLength: 500
-          example: Field cardId không đúng định dạng
-        instance:
-          type:
-            - string
-            - 'null'
-          format: uri
-          example: https://campus.local/alerts
-        errors:
+          format: uuid
+        channels:
           type: array
-          minItems: 0
-          maxItems: 50
+          items:
+            type: string
+            enum:
+              - email
+              - telegram
+              - sms
+        receivers:
+          type: array
           items:
             type: object
-            additionalProperties: false
-            required:
-              - field
-              - code
-              - message
             properties:
-              field:
+              userId:
                 type: string
-                minLength: 1
-                maxLength: 80
-                example: cardId
-              code:
+              email:
                 type: string
-                minLength: 2
-                maxLength: 80
-                example: PATTERN_MISMATCH
-              message:
+              phone:
                 type: string
-                minLength: 3
-                maxLength: 200
-                example: cardId phải có dạng RFID-YYYY-NNN
-
-  responses:
-    BadRequest:
-      description: Dữ liệu sai định dạng
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            default:
-              value:
-                type: https://campus.local/errors/validation
-                title: Dữ liệu không hợp lệ
-                status: 400
-                detail: Payload không đúng JSON Schema
-                instance: https://campus.local/alerts
-                errors:
-                  - field: alertType
-                    code: ENUM_MISMATCH
-                    message: alertType không nằm trong danh sách cho phép
-
-    Unauthorized:
-      description: Thiếu hoặc sai thông tin xác thực
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            default:
-              value:
-                type: https://campus.local/errors/unauthorized
-                title: Chưa xác thực
-                status: 401
-                detail: Thiếu Bearer token
-                instance: https://campus.local/alerts/recent
-                errors: []
-
-    Forbidden:
-      description: Không có quyền thực hiện thao tác
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
-    NotFound:
-      description: Resource không tồn tại
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
-    Conflict:
-      description: Xung đột nghiệp vụ hoặc trùng idempotency key
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
-    UnprocessableEntity:
-      description: Payload đúng định dạng nhưng không hợp lệ về nghiệp vụ
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
-    InternalServerError:
-      description: Lỗi không mong muốn phía server
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
+              telegramChatId:
+                type: string
+        priority:
+          type: string
+          enum:
+            - LOW
+            - MEDIUM
+            - HIGH
+            - CRITICAL
+    NotificationResponse:
+      type: object
+      properties:
+        notificationId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - PENDING
+            - SENT
+            - FAILED
+        sentAt:
+          type: string
+          format: date-time
+    NotificationPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationResponse'
+        nextCursor:
+          type: string
+        hasMore:
+          type: boolean
